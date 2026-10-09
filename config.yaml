@@ -1,0 +1,330 @@
+# ============================================================
+# ArcGIS Incident Viewer Configuration
+# ============================================================
+
+app:
+  title: "Hawaii Incident Summary"
+  subtitle: "Fire Service Incidents 2020-Current"
+
+data:
+  service_url: "https://services8.arcgis.com/UPC3S4iclp0mZ0N4/arcgis/rest/services/FireServiceIncidents_all_view/FeatureServer/0"
+
+map:
+  basemap: "streets-navigation-vector"
+  initial_center:
+    - -157.7
+    - 20.8
+  initial_zoom: 6
+  selection_zoom: 16
+  extent_expand_factor: 1.15
+
+  # ----------------------------------------------------------
+  # Incident layer visibility
+  #
+  # 0 = no scale limit. This overrides any visibility range set on
+  # the hosted layer so the points/clusters draw at statewide scale.
+  # ----------------------------------------------------------
+  incident_layer:
+    min_scale: 0
+    max_scale: 0
+
+  # ----------------------------------------------------------
+  # Point clustering
+  #
+  # Zoomed out: incidents are grouped into numbered clusters.
+  # Zoomed in past max_scale: clusters break apart and the
+  # individual points draw with the renderer below.
+  # Set enabled: false to always show individual points.
+  # ----------------------------------------------------------
+  clustering:
+    enabled: true
+    radius: "55px"
+    min_size: "18px"
+    max_size: "40px"
+    max_scale: 750000          # larger number = points appear sooner while zooming in
+    symbol_style: "circle"
+    symbol_color: "#007ac2"
+    symbol_outline_color: "#ffffff"
+    symbol_outline_width: 1
+    label_color: "#ffffff"
+    label_size: "10px"
+
+  # ----------------------------------------------------------
+  # Map symbology
+  #
+  # Supported renderer types:
+  #   simple        = one symbol for every feature
+  #   unique_value  = symbol based on a field value
+  #
+  # Any value not listed under "values" uses default_symbol.
+  # ----------------------------------------------------------
+
+  renderer:
+    type: "unique_value"
+    field: "CRR_SUBCATEGORY"
+
+    default_symbol:
+      label: "Other"
+      style: "circle"
+      size: 6
+      color: "#808080"
+      outline_color: "#ffffff"
+      outline_width: 0.5
+
+    values:
+      - value: "WILDFIRE"
+        label: "Wildfire"
+        style: "circle"
+        size: 12
+        color: "#d73027"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+
+      - value: "MOTOR_VEHICLE_FIRE"
+        label: "Motor vehicle fire"
+        style: "triangle"
+        size: 12
+        color: "#d73027"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+
+      - value: "BUILDING_FIRE"
+        label: "Building fire"
+        style: "square"
+        size: 12
+        color: "#d73027"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+
+      - value: "COOKING_FIRE"
+        label: "Cooking fire"
+        style: "diamond"
+        size: 12
+        color: "#d73027"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+     
+      - value: "FALL_LIFT_ASSIST"
+        label: "Fall lift assist"
+        style: "square"
+        size: 7
+        color: "#fdae61"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+
+      - value: "MOTOR_VEHICLE_ACCIDENT"
+        label: "Hazardous Situation"
+        style: "triangle"
+        size: 12
+        color: "#984ea3"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+
+      - value: "ALARM_SYSTEM_MALFUNCTION"
+        label: "Alarm system malfunction"
+        style: "circle"
+        size: 7
+        color: "#66a61e"
+        outline_color: "#ffffff"
+        outline_width: 0.5
+
+# ------------------------------------------------------------
+# Filters
+#
+# Supported filter types:
+#   date_range        = fixed number-of-days choices
+#   custom_date_range = user-entered start/end dates
+#   unique_values     = values read dynamically from the layer
+#
+# To add/remove/reorder filters, edit only this section.
+# ------------------------------------------------------------
+
+filters:
+
+  - id: "incident_date"
+    type: "date_range"
+    field: "INC_DATE"
+    label: "Incident Date"
+    default: 7
+    choices:
+      - label: "Last 3 days"
+        value: 3
+      - label: "Last 7 days"
+        value: 7
+      - label: "Last 15 days"
+        value: 15
+      - label: "Last 30 days"
+        value: 30
+      - label: "Last 90 days"
+        value: 90
+      - label: "Last 180 days"
+        value: 180
+
+  - id: "incident_date_custom"
+    type: "custom_date_range"
+    field: "INC_DATE"
+    label: "Custom Incident Date Range"
+    hint: "Optional. Enter any start and end dates. Using this disables the preset date filter above."
+
+  - id: "fire_department"
+    type: "unique_values"
+    field: "FD_NAME"
+    label: "Fire Department"
+    multiple: true
+    empty_means_all: true
+    # Canonical NERIS department names shown in the dropdown. Each choice can
+    # match both the current NERIS name and its historical NFIRS name.
+    value_groups:
+      "Kauai Fire Department":
+        - "Kauai Fire Department"
+        - "Kauai County Fire Department"
+      "County of Maui Department Of Fire & Public Safety":
+        - "County of Maui Department Of Fire & Public Safety"
+        - "Maui Fire Department"
+      "Honolulu Fire Department":
+        - "Honolulu Fire Department"
+      "Hawaii Fire Department":
+        - "Hawaii Fire Department"
+    hint: "Ctrl/Cmd-click to select more than one. No selection = all."
+
+  - id: "crr_category"
+    type: "unique_values"
+    field: "CRR_CATEGORY"
+    label: "CRR Category"
+    multiple: true
+    empty_means_all: true
+    hint: "Ctrl/Cmd-click to select more than one. No selection = all."
+
+  - id: "crr_subcategory"
+    type: "unique_values"
+    field: "CRR_SUBCATEGORY"
+    label: "CRR Subcategory"
+    multiple: true
+    empty_means_all: true
+    cascade_from: "crr_category"
+    hint: "Filtered by CRR Category. Ctrl/Cmd-click to select more than one. No selection = all."
+
+# ------------------------------------------------------------
+# Geographic Summary of Incidents
+#
+# Plug in any polygon FeatureLayer here. The selector chooses one
+# polygon; incidents are then summarized using points that intersect
+# that polygon. display_fields controls the summary cards shown above
+# the charts.
+# ------------------------------------------------------------
+
+geography:
+  summary_title: "Geographic Summary of Incidents"
+  fire_summary_title: "Fire Incidents by State House District and Category"
+  label: "State House"
+  service_url: "https://services8.arcgis.com/UPC3S4iclp0mZ0N4/arcgis/rest/services/ReferenceLayers/FeatureServer/32"
+  selector_field: "house_abbr"
+  selector_label: "House District(s)"
+  selector_size: 3
+  all_label: "All House Districts"
+  table_label_field: "house_name"
+  table_row_label: "House District"
+
+  # Polygon styling. Change these values without editing app.js.
+  polygon_style:
+    fill_color: "#007ac2"
+    fill_opacity: 0.04
+    outline_color: "#007ac2"
+    outline_opacity: 0.55
+    outline_width: 0.6
+
+  selected_polygon_style:
+    fill_color: "#007ac2"
+    fill_opacity: 0.04
+    outline_color: "#007ac2"
+    outline_opacity: 0.85
+    outline_width: 2.0
+
+  display_fields:
+    - field: "house_abbr"
+      label: "House Abbr"
+    - field: "house_name"
+      label: "House Name"
+
+kpi:
+  fire_filter_field: "CRR_CATEGORY"
+  fire_filter_value: "FIRE"
+  count_label: "Fire Incidents"
+  category_field: "CRR_SUBCATEGORY"
+  category_label: "Fire Category"
+  date_field: "INC_DATE"
+  category_title: "Fire Incidents by Category"
+  trend_title: "Monthly Fire Incident Trend"
+
+# ------------------------------------------------------------
+# Incident list
+# ------------------------------------------------------------
+
+list:
+  sort_field: "INC_DATE"
+  sort_order: "descending"
+
+  fields:
+    - field: "incidentid"
+      role: "title"
+
+    - field: "fulladdr"
+      role: "address"
+
+    - field: "CRR_CATEGORY"
+      role: "meta"
+
+    - field: "INC_DATE"
+      role: "date"
+      type: "date_only"
+
+    - field: "PRIMARY_INCIDENT_TYPE"
+      role: "meta"
+
+    - field: "NERIS_CATEGORY"
+      role: "meta"
+      
+    - field: "NERIS_SUBCATEGORY"
+      role: "meta"
+
+# ------------------------------------------------------------
+# Incident details popup
+# ------------------------------------------------------------
+
+details:
+  title_template: "Incident {incidentid}"
+
+  fields:
+    - field: "incidentid"
+      label: "Incident ID"
+
+    - field: "fulladdr"
+      label: "Address"
+
+    - field: "calldatetime"
+      label: "Call Date"
+      type: "date"
+
+    - field: "INC_DATE"
+      label: "Incident Date"
+      type: "date_only"
+
+    - field: "ENTITY_NAME"
+      label: "Fire Department"
+
+    - field: "CRR_CATEGORY"
+      label: "CRR Category"
+
+    - field: "CRR_SUBCATEGORY"
+      label: "CRR Subcategory"
+
+    - field: "PROP_USE_DESC"
+      label: "Property Use"
+
+    - field: "ACT_TAK1_DESC"
+      label: "Primary Action Taken"
+
+behavior:
+  default_status_text: "Loading..."
+  no_results_text: "No incidents match the current filters."
+  selection_highlight: true
